@@ -1,4 +1,3 @@
-// components/BigDate.tsx
 "use client";
 
 import * as React from "react";
@@ -16,7 +15,7 @@ export default function BigDate({
   className,
   dayClassName,
   labelsClassName,
-  tone = "dark", // "dark" sobre fondo claro, "light" sobre fondo oscuro
+  tone = "dark",
 }: {
   date: Date | string | number;
   className?: string;
@@ -30,17 +29,12 @@ export default function BigDate({
   const month = MONTHS[d.getMonth()];
   const dow = WEEKDAYS[d.getDay()];
 
-  const mutedColor  = tone === "light" ? "rgba(255,255,255,0.70)" : "rgba(15,23,42,0.70)";
-  const hairlineCol = tone === "light" ? "rgba(255,255,255,0.45)" : "rgba(15,23,42,0.18)";
+  const mutedColor  = tone === "light" ? "rgba(255,255,255,0.72)" : "var(--inkSoft)";
+  const hairlineCol = tone === "light" ? "rgba(255,255,255,0.35)" : "var(--border)";
 
   return (
-    <section className={`w-full text-center ${className ?? ""}`} >
-      {/* Fila en grid: 1fr | auto | 1fr para centrar el día */}
-      <div
-        className="grid items-center gap-5 sm:gap-8"
-        style={{ gridTemplateColumns: "1fr auto 1fr" }}
-      >
-        {/* DÍA DE LA SEMANA (alineado hacia el centro, con borde arriba/abajo) */}
+    <section className={`w-full text-center ${className ?? ""}`}>
+      <div className="grid items-center gap-5 sm:gap-8" style={{ gridTemplateColumns: "1fr auto 1fr" }}>
         <span
           className={`justify-self-end inline-block px-3 py-1 whitespace-nowrap uppercase tracking-[0.3em] text-[10px] sm:text-xs ${labelsClassName ?? ""}`}
           style={{
@@ -52,16 +46,19 @@ export default function BigDate({
           {dow}
         </span>
 
-        {/* Día grande — SIEMPRE centrado */}
         <span
-          className={`leading-none font-light text-blue-950/90 ${dayClassName ?? ""}`}
-          style={{ fontSize: "clamp(64px, 16vw, 120px)", lineHeight: 0.9 }}
+          className={`leading-none font-light ${dayClassName ?? ""}`}
+          style={{
+            fontSize: "clamp(64px, 16vw, 120px)",
+            lineHeight: 0.9,
+            color: "var(--ink)",
+            textShadow: "0 10px 28px rgba(139,92,246,0.12)",
+          }}
           aria-label={`Día ${day}`}
         >
           {day}
         </span>
 
-        {/* AÑO (alineado hacia el centro, con borde arriba/abajo) */}
         <span
           className={`justify-self-start inline-block px-3 py-1 whitespace-nowrap uppercase tracking-[0.3em] text-[10px] sm:text-xs ${labelsClassName ?? ""}`}
           style={{
@@ -74,7 +71,6 @@ export default function BigDate({
         </span>
       </div>
 
-      {/* Mes (Ahora ubicado debajo del número) */}
       <div
         className={`uppercase tracking-[0.35em] text-[11px] sm:text-xs ${labelsClassName ?? ""}`}
         style={{ color: mutedColor }}

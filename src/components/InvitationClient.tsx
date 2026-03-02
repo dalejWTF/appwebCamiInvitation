@@ -1,4 +1,3 @@
-// src/components/InvitationClient.tsx
 "use client";
 
 import * as React from "react";
@@ -9,9 +8,13 @@ import BackgroundAudio from "@/components/BackgroundAudio";
 import RevealSection from "@/components/RevealSection";
 import InfoCard from "./Infocard";
 import { Button } from "@/components/ui/button";
-import HeroCover from "./HeroCover";
+import HeroCover from "@/components/HeroCover";
+import VenueBlock from "@/components/VenueBlock";
+import BankAccountsDialog from "@/components/BankAccountsDialog";
+import ConfirmCard from "@/components/ConfirmCard";
 
-import { Gift, Sparkles, Banknote } from "lucide-react";
+import { Gift, Banknote } from "lucide-react";
+import Image from "next/image";
 import {
     Great_Vibes,
     Cormorant_Garamond,
@@ -20,10 +23,12 @@ import {
     Mea_Culpa,
     Tangerine,
     Lavishly_Yours,
-    Rouge_Script
+    Rouge_Script,
 } from "next/font/google";
 
 import dynamic from "next/dynamic";
+const CountdownBanner = dynamic(() => import("@/components/CountdownBanner"), { ssr: false });
+
 const greatVibes = Great_Vibes({ subsets: ["latin"], weight: "400", variable: "--font-greatvibes", display: "swap" });
 const cormorant = Cormorant_Garamond({ subsets: ["latin"], weight: ["400", "500", "600"], variable: "--font-cormorant", display: "swap" });
 const lora = Lora({ subsets: ["latin"], weight: ["400", "500"], variable: "--font-lora", display: "swap" });
@@ -33,76 +38,250 @@ const tangerine = Tangerine({ subsets: ["latin"], weight: "400", variable: "--fo
 const lavishlyYours = Lavishly_Yours({ subsets: ["latin"], weight: "400", variable: "--font-lavishlyyours", display: "swap" });
 const rougeScript = Rouge_Script({ subsets: ["latin"], weight: "400", variable: "--font-rougescript", display: "swap" });
 
-const CountdownBanner = dynamic(() => import("@/components/CountdownBanner"), { ssr: false });
 const HB_DATE = new Date("2026-03-14T18:30:00");
+const CHURCH_NAME = "Iglesia Santo Domingo";
+const CHURCH_MAPS_URL = "https://maps.app.goo.gl/12A17Y3gianjggvA9";
+const RECEPTION_NAME = "Lugar Fiesta";
+const RECEPTION_MAPS_URL = "https://maps.app.goo.gl/kdwiUihm8pJUfiQv8";
 
 const accounts = [
     { bank: "Cta Ahorros Banco de Loja", holder: "VILLAMAGUA TORRES, CAMILA ELIZABETH", account: "2903295785", dni: "1150174132" },
-]
+];
+
+// Paleta Lila (alineada al cover)
+const LILA = {
+    // Texto en morado oscuro (no negro)
+    ink: "#2A1B3D", // morado tinta
+    inkSoft: "rgba(42,27,61,0.72)",
+    inkFaint: "rgba(42,27,61,0.52)",
+
+    // Lilas más suaves (menos “neón”)
+    lilac: "#9C86C8",
+    lilac2: "#BFAFE6",
+    lilac3: "#E9E2F6",
+
+    // Papel/acuarela
+    blush: "#FAF7FC",
+    card: "rgba(255,255,255,0.78)",
+    border: "rgba(156,134,200,0.30)",
+    shadow: "0 14px 40px rgba(42,27,61,0.10)",
+};
+
+const SOFT_BTN_BG = "rgba(250,247,252,0.88)";
+const SOFT_BTN_BG_HOVER = "rgba(245,243,255,0.96)";
+const SOFT_TEXT = LILA.ink;
+
+type CSSVars = Record<`--${string}`, string>;
+type Family = { id: string; nombreFamilia: string; nroPersonas: number };
+
+function withVars(vars: CSSVars, base: React.CSSProperties = {}): React.CSSProperties & CSSVars {
+    return { ...base, ...vars };
+}
+
+export default function InvitationClient({ familyIdFromUrl }: { familyIdFromUrl?: string }) {
+  const [prefillFamily, setPrefillFamily] = React.useState<Family | undefined>(undefined);
+  const [confirmed, setConfirmed] = React.useState(false);
+  const [declined, setDeclined] = React.useState(false);
+  const [checking, setChecking] = React.useState(true);
 
 
-const SOFT_BTN_BG = "#EAF3FB";
-const SOFT_BTN_BG_HOVER = "#E1EEF8";
-const SOFT_TEXT = "#0F172A";
+  // Lee estado desde el backend por familyId
+  React.useEffect(() => {
+    if (!familyIdFromUrl) { setChecking(false); return; }
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(`/api/guests?familyId=${encodeURIComponent(familyIdFromUrl)}`, { cache: "no-store" });
+        if (!res.ok) throw new Error(`GET /api/guests?familyId failed: ${res.status}`);
+        const data = await res.json();
 
-export default function InvitationClient() {
+        // Normalización (acepta varios esquemas del backend):
+        const rawStr = (data.status ?? data.rsvp ?? data.response ?? data.answer ?? "")
+          .toString()
+          .trim()
+          .toLowerCase();
+        const yesLike = ["si", "sí", "yes", "true"];
+        const noLike = ["no", "false"];
+        const responded = data.responded === true;
+        const isYes =
+          yesLike.includes(rawStr) ||
+          data.status === "si" ||
+          data.confirmed === true ||
+          (responded && data.attending === true);
+
+        const isNo =
+          noLike.includes(rawStr) ||
+          data.status === "no" ||
+          data.declined === true ||
+          (responded && data.attending === false);
+
+        if (!cancelled) {
+          setConfirmed(Boolean(isYes));
+          setDeclined(Boolean(isNo) && !isYes);
+        }
+      } catch (e) {
+        console.error(e);
+      } finally {
+        if (!cancelled) setChecking(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [familyIdFromUrl]);
+
+  // Prefill de familia
+  React.useEffect(() => {
+    if (!familyIdFromUrl) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/guests", { cache: "no-store" });
+        if (!res.ok) return;
+        const data = await res.json();
+        const list: Family[] = data.families ?? [];
+        const fam = list.find((f) => f.id === familyIdFromUrl);
+        if (!cancelled) setPrefillFamily(fam);
+      } catch (e) {
+        console.error(e);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [familyIdFromUrl]);
     const [open, setOpen] = React.useState(false);
+
+    const mainStyle = withVars(
+        {
+            "--ink": LILA.ink,
+            "--inkSoft": LILA.inkSoft,
+            "--inkFaint": LILA.inkFaint,
+            "--lilac": LILA.lilac,
+            "--lilac2": LILA.lilac2,
+            "--lilac3": LILA.lilac3,
+            "--blush": LILA.blush,
+            "--card": LILA.card,
+            "--border": LILA.border,
+            "--shadow": LILA.shadow,
+        },
+        { overscrollBehaviorY: "contain" }
+    );
 
     return (
         <main
             className={`paper-invite relative h-dvh w-full overflow-y-auto overflow-x-hidden snap-y snap-mandatory scroll-smooth no-scrollbar ${lora.className}`}
-            style={{ overscrollBehaviorY: "contain" }}
+            style={mainStyle}
         >
-            <BackgroundAudio
-                src="audio/theme.mp3"
-                title="Cancion Cami"
-                artist="Tokito Remix"
-            />
+            <BackgroundAudio src="audio/theme.mp3" title="Cancion Cami" artist="Tokito Remix" />
+
             <div className="mx-auto max-w-[640px]">
-                {/* 1 — Presentacion inicial */}
+                {/* 1 — Cover (se queda tal cual les gustó) */}
                 <RevealSection>
                     <Cover />
                 </RevealSection>
 
-                {/* 2 — Texto y CountDown */}
+                {/* 2 — Texto + Fecha + Countdown (mismo mood que cover: acuarela + suave) */}
                 <RevealSection>
                     <section
-                        className="relative px-4 sm:px-6 py-6 sm:py-8"
+                        className="relative px-4 sm:px-6 py-7 sm:py-9"
                         style={{
-                            background: "linear-gradient(0deg, #F7FBFE 0%, #EFF7FD 100%)",
-                            boxShadow: "0 4px 14px rgba(0,0,0,0.04)",
+                            background:
+                                "radial-gradient(900px 420px at 50% -12%, rgba(167,139,250,0.22), transparent 60%)," +
+                                "linear-gradient(180deg, rgba(250,247,252,1) 0%, rgba(245,243,255,1) 100%)",
+                            boxShadow: "var(--shadow)",
+                            borderTop: "1px solid var(--border)",
+                            borderBottom: "1px solid var(--border)",
                         }}
                     >
                         <div className="mx-auto w-full max-w-[560px] text-center">
                             <TextBlock
-                                className={`bg-transparent shadow-none p-0`}
-                                paragraphClassName={`text-slate-700 text-center leading-[1.2] ${rougeScript.className}`}
+                                className="bg-transparent shadow-none p-0"
+                                paragraphClassName={`text-center leading-[1.2] ${rougeScript.className}`}
                                 paragraphs={[
                                     "Porque esta noche es muy importante para mi, quiero compartirla con las personas que llevo en el corazón " +
                                     "y por ser una de ellas, quisiera que estes presente en una de las noches más inolvidables de mi vida",
                                 ]}
                             />
-                            <BigDate
-                                date={HB_DATE}
-                                tone="dark"
-                                className={`mx-auto ${cormorant.className}`}
-                                dayClassName={greatVibes.className}
-                                labelsClassName={lora.className}
-                            />
+
+                            <div style={{ color: "var(--ink)" }}>
+                                <BigDate
+                                    date={HB_DATE}
+                                    tone="dark"
+                                    className={`mx-auto ${cormorant.className}`}
+                                    dayClassName={greatVibes.className}
+                                    labelsClassName={lora.className}
+                                />
+                            </div>
+
                             <CountdownBanner date={HB_DATE} className="my-0" />
                         </div>
                     </section>
                 </RevealSection>
-                
-                {/* 4 — Regalos */}
-                <RevealSection className="pb-9">
+
+                {/* 3 — Información (suave, lila, con el adorno de rosas ya que lo tienen) */}
+                <RevealSection>
+                    <section
+                        className="relative w-full min-h-[85vh] flex flex-col items-center justify-center text-center px-4 overflow-hidden bg-[#faf7fc]"
+                    >
+                        <div className="z-10 pb-9 py-9">
+                            <VenueBlock
+                                title="Ceremonia"
+                                name={CHURCH_NAME}
+                                address="Av. Pio Jaramillo Alvarado, Loja 110150"
+                                time="04:00 PM"
+                                mapUrl={CHURCH_MAPS_URL}
+                            />
+
+                            <div className="relative px-6 py-2 [--rose:clamp(90px,34vw,200px)] sm:[--rose:clamp(72px,22vw,180px)]">
+                                <Image
+                                    src="/blueroses.png"
+                                    alt=""
+                                    width={240}
+                                    height={240}
+                                    className="pointer-events-none select-none absolute z-20"
+                                    style={{
+                                        left: "calc(-0.20 * var(--rose))",
+                                        top: "50%",
+                                        transform: "translateY(-50%)",
+                                        width: "var(--rose)",
+                                        height: "auto",
+                                        opacity: 0.85,
+                                        filter: "saturate(0.9)",
+                                    }}
+                                    priority={false}
+                                />
+                            </div>
+
+                            <VenueBlock
+                                title="Recepción"
+                                name={RECEPTION_NAME}
+                                address="Vía a Cuenca, barrio Carigán, Loja"
+                                time="06:30 PM"
+                                mapUrl={RECEPTION_MAPS_URL}
+                            />
+                        </div>
+                    </section>
+                </RevealSection>
+
+                {/* 4 — Regalos (glass lila + botón degradado suave) */}
+                <RevealSection className="py-9">
+                    <InfoCard
+                        title="Código de Vestimenta"
+                        titleClassName={`${mea_culpa.className} text-4xl`}
+                        icon={<Gift className="size-6" style={{ color: "var(--lilac)" }} />}
+                    >
+                        <p className={`${rougeScript.className} text-[26px] sm:text-[33px]`} style={{ color: "var(--inkSoft)" }}>
+                            Para esta ocasión tan especial, el código de vestimenta es elegante.
+                        </p>
+                    </InfoCard>
+                    <div className="my-6" />
 
                     <InfoCard
-                        title={<span className={`${mea_culpa.className} text-4xl`}>{`Regalos`}</span>}
-                        icon={<Gift className="size-6" style={{ color: "#3579AD" }} />}
+                        title="Regalos"
+                        titleClassName={`${mea_culpa.className} text-4xl`}
+                        icon={<Gift className="size-6" style={{ color: "var(--lilac)" }} />}
                     >
-                        <p className={`${rougeScript.className} text-[26px] sm:text-[33px]`}>
-                            Tu presencia es lo más valioso para nosotros. Si deseas hacernos un regalo, hemos preparado algunas opciones para facilitarte el proceso.
+                        <p className={`${rougeScript.className} text-[26px] sm:text-[33px]`} style={{ color: "var(--inkSoft)" }}>
+                            El mejor regalo es tu presencia! <br />
+                            Pero si deseas obsequiarme algo, aquí te dejo mi cuenta para que puedas hacerlo de forma segura y confiable. <br />
+                            Agradezco de corazón tu cariño y apoyo en este día tan especial.
                         </p>
 
                         <div className={`mt-4 flex items-center justify-center gap-3 flex-wrap text-center ${rougeScript.className} text-[26px] sm:text-[33px]`}>
@@ -110,16 +289,17 @@ export default function InvitationClient() {
                                 <Button
                                     type="button"
                                     onClick={() => setOpen(true)}
-                                    className="rounded-xl px-5 py-2 w-auto text-[19px] sm:text-[25px]"
+                                    className="rounded-xl px-5 py-2 w-auto text-[19px] sm:text-[25px] border"
                                     style={{
                                         backgroundColor: SOFT_BTN_BG,
                                         color: SOFT_TEXT,
-                                        boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
+                                        borderColor: "var(--border)",
+                                        boxShadow: "0 12px 28px rgba(139,92,246,0.14)",
                                     }}
                                     onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = SOFT_BTN_BG_HOVER)}
                                     onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = SOFT_BTN_BG)}
                                 >
-                                    <Banknote className="mr-2 size-4" />
+                                    <Banknote className="mr-2 size-4" style={{ color: "var(--lilac)" }} />
                                     Ver cuentas
                                 </Button>
                             )}
@@ -127,53 +307,47 @@ export default function InvitationClient() {
                     </InfoCard>
                 </RevealSection>
 
-                {/* 5 — Cierre */}
+                {/* 5 — Confirmación — SOLO si hay id */}
+                {familyIdFromUrl && (
+                    <RevealSection>
+                        <section>
+                            <ConfirmCard
+                                confirmed={confirmed}
+                                declined={declined}
+                                checking={checking}
+                                prefillFamilyId={familyIdFromUrl}
+                                prefillFamily={prefillFamily}
+                                onConfirmed={() => { setConfirmed(true); setDeclined(false); }}
+                                onDeclined={() => { setConfirmed(false); setDeclined(true); }}
+                                titleClassName={greatVibes.className}
+                                textClassName={lora.className}
+                                hideIfNoPrefill
+                                messageWhenConfirmed="¡Nos hace mucha ilusión compartir este día contigo! 💙"
+                                messageWhenDeclined="No hay problema, nos encontraremos en una siguiente ocasión"
+                            />
+                        </section>
+                    </RevealSection>
+                )}
+
+                {/* 6 — Cierre */}
                 <RevealSection>
                     <HeroCover src="/shinobu.png" alt="Nos vemos pronto" objectPosition="60% 20%">
-                        <h1 className={`text-center text-5xl sm:text-8xl ${greatVibes.className} text-white drop-shadow`}>
+                        <h1
+                            className={`text-center text-5xl sm:text-8xl ${greatVibes.className} text-white`}
+                            style={{ textShadow: "0 12px 36px rgba(167,139,250,0.55)" }}
+                        >
                             ¡Nos vemos en la fiesta!
                         </h1>
                     </HeroCover>
                 </RevealSection>
             </div>
-            {open && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm transition-opacity">
-                    <div className="bg-white rounded-2xl p-6 w-full max-w-sm relative shadow-2xl">
-                        {/* Botón para cerrar (X) */}
-                        <button
-                            onClick={() => setOpen(false)}
-                            className="absolute top-4 right-4 text-slate-400 hover:text-slate-800 transition-colors"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
-                        </button>
 
-                        <h3 className={`text-3xl text-center text-[#3579AD] mb-4 ${cormorant.className} font-semibold`}>
-                            Datos Bancarios
-                        </h3>
-
-                        <div className={`space-y-4 text-slate-700 ${lora.className}`}>
-                            {accounts.map((acc, index) => (
-                                <div key={index} className="bg-[#F7FBFE] p-4 rounded-xl border border-[#E1EEF8]">
-                                    <p className="mb-1"><strong>Banco:</strong> {acc.bank}</p>
-                                    <p className="mb-1"><strong>Titular:</strong> {acc.holder}</p>
-                                    <p className="mb-1"><strong>Cuenta:</strong> {acc.account}</p>
-                                    <p><strong>CI/RUC:</strong> {acc.dni}</p>
-                                </div>
-                            ))}
-                        </div>
-
-                        <Button
-                            onClick={() => setOpen(false)}
-                            className="w-full mt-6 rounded-xl py-6 text-lg"
-                            style={{ backgroundColor: "#3579AD", color: "white" }}
-                        >
-                            Cerrar
-                        </Button>
-                    </div>
-                </div>
-            )}
+            {/* DIALOG CUENTAS (bonito) */}
+            <BankAccountsDialog
+                open={open}
+                onOpenChange={setOpen}
+                accounts={accounts}
+            />
         </main>
-
-
     );
 }

@@ -1,4 +1,4 @@
-// app/page.tsx
+// app/invitation/page.tsx
 import InvitationClient from "@/components/InvitationClient";
 
 export default async function Page({
@@ -9,5 +9,5 @@ export default async function Page({
   const sp = await searchParams;
   const familyIdFromUrl = typeof sp.id === "string" ? sp.id : undefined;
 
-  return <InvitationClient />;
+  return <InvitationClient familyIdFromUrl={familyIdFromUrl} />;
 }

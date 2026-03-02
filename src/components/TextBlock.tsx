@@ -1,4 +1,3 @@
-// components/TextBlock.tsx
 "use client";
 
 export default function TextBlock({
@@ -23,13 +22,22 @@ export default function TextBlock({
         className ?? "",
       ].join(" ")}
     >
-      
-      <div className="space-y-2 text-sm text-slate-700 text-[25px] sm:text-[29px]">
+      {title && (
+        <div
+          className={["mb-3 text-center text-sm font-semibold tracking-wider", titleClassName ?? ""].join(" ")}
+          style={{ color: "var(--ink)" }}
+        >
+          {title}
+        </div>
+      )}
+
+      <div className="space-y-2 text-[25px] sm:text-[29px]" style={{ color: "var(--inkSoft)" }}>
         {paragraphs.map((p, i) => (
-          <p key={i} className={paragraphClassName}>{p}</p>
+          <p key={i} className={paragraphClassName}>
+            {p}
+          </p>
         ))}
       </div>
-      
     </div>
   );
 }
