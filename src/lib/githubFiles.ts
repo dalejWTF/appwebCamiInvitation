@@ -1,10 +1,10 @@
 // lib/githubFiles.ts
 const GH = "https://api.github.com";
 
-const OWNER  = process.env.GITHUB_OWNER!;
-const REPO   = process.env.GITHUB_REPO!;
+const OWNER = process.env.GITHUB_OWNER!;
+const REPO = process.env.GITHUB_REPO!;
 const BRANCH = process.env.GITHUB_BRANCH || "main";
-const TOKEN  = process.env.GITHUB_TOKEN!;
+const TOKEN = process.env.CAMI_INVITATION!;
 
 export type GhFile = { content: string; sha?: string };
 

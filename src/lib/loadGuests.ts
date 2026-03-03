@@ -9,8 +9,6 @@ export type Family = {
   invitados?: { adult?: number; kids?: number; total?: number };
 };
 
-import { FAMILIAS as LOCAL_FAMILIAS } from "@/data/familias";
-
 const GUESTS_PATH = process.env.GITHUB_GUESTS_PATH || "data/guests.json";
 
 /* Helpers de tipado */
@@ -34,9 +32,7 @@ function toNumberSafe(v: unknown): number {
 export async function loadGuests(): Promise<Family[]> {
   try {
     const gh = await getGhFile(GUESTS_PATH);
-    if (!gh) return LOCAL_FAMILIAS as unknown as Family[];
-
-    let raw = decodeBase64ToUtf8(gh.content);
+    let raw = decodeBase64ToUtf8(gh!.content);
     if (raw.charCodeAt(0) === 0xfeff) raw = raw.slice(1);
 
     if (GUESTS_PATH.endsWith(".json")) {
@@ -82,10 +78,10 @@ export async function loadGuests(): Promise<Family[]> {
       return normalizeFamilies(arr);
     }
 
-    return LOCAL_FAMILIAS as unknown as Family[];
+    return [];
   } catch (e) {
-    console.error("[loadGuests] fallback a LOCAL_FAMILIAS:", e);
-    return LOCAL_FAMILIAS as unknown as Family[];
+    console.error("[loadGuests] fallback:", e);
+    return [];
   }
 }
 
@@ -100,7 +96,7 @@ function normalizeFamilies(arr: unknown[]): Family[] {
       // ⬇️ NUEVO: soporta { invitados: { adult, kids, total } }
       const rawInv = isRecord(x.invitados) ? (x.invitados as Record<string, unknown>) : undefined;
       const invAdult = rawInv ? toNumberSafe(rawInv.adult) : NaN;
-      const invKids  = rawInv ? toNumberSafe(rawInv.kids)  : NaN;
+      const invKids = rawInv ? toNumberSafe(rawInv.kids) : NaN;
       const invTotal = rawInv ? toNumberSafe(rawInv.total) : NaN;
 
       let nroPersonas = NaN;
@@ -108,7 +104,7 @@ function normalizeFamilies(arr: unknown[]): Family[] {
         nroPersonas = invTotal;
       } else if (Number.isFinite(invAdult) || Number.isFinite(invKids)) {
         const a = Number.isFinite(invAdult) ? invAdult : 0;
-        const k = Number.isFinite(invKids)  ? invKids  : 0;
+        const k = Number.isFinite(invKids) ? invKids : 0;
         if (a + k > 0) nroPersonas = a + k;
       }
 
@@ -127,12 +123,12 @@ function normalizeFamilies(arr: unknown[]): Family[] {
         nroPersonas,
         ...(rawInv
           ? {
-              invitados: {
-                adult: Number.isFinite(invAdult) ? invAdult : undefined,
-                kids:  Number.isFinite(invKids)  ? invKids  : undefined,
-                total: Number.isFinite(invTotal) ? invTotal : undefined,
-              },
-            }
+            invitados: {
+              adult: Number.isFinite(invAdult) ? invAdult : undefined,
+              kids: Number.isFinite(invKids) ? invKids : undefined,
+              total: Number.isFinite(invTotal) ? invTotal : undefined,
+            },
+          }
           : {}),
       };
 

@@ -22,8 +22,8 @@ export default function BankAccountsDialog({
   open,
   onOpenChange,
   accounts,
-  title = "Cuentas para regalo",
-  description = "Gracias por tu cariño. Puedes usar cualquiera de estas cuentas:",
+  title = "Cuenta para regalo",
+  description = "Gracias por tu cariño. Puedes usar la siguiente cuenta:",
   onShowQR,
 }: {
   open: boolean;

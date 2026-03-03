@@ -13,7 +13,8 @@ import VenueBlock from "@/components/VenueBlock";
 import BankAccountsDialog from "@/components/BankAccountsDialog";
 import ConfirmCard from "@/components/ConfirmCard";
 
-import { Gift, Banknote } from "lucide-react";
+import { Gift, Banknote, Crown } from "lucide-react";
+
 import Image from "next/image";
 import {
     Great_Vibes,
@@ -231,7 +232,7 @@ export default function InvitationClient({ familyIdFromUrl }: { familyIdFromUrl?
 
                             <div className="relative px-6 py-2 [--rose:clamp(90px,34vw,200px)] sm:[--rose:clamp(72px,22vw,180px)]">
                                 <Image
-                                    src="/blueroses.png"
+                                    src="/butterfly1.png"
                                     alt=""
                                     width={240}
                                     height={240}
@@ -265,7 +266,7 @@ export default function InvitationClient({ familyIdFromUrl }: { familyIdFromUrl?
                     <InfoCard
                         title="Código de Vestimenta"
                         titleClassName={`${mea_culpa.className} text-4xl`}
-                        icon={<Gift className="size-6" style={{ color: "var(--lilac)" }} />}
+                        icon={<Crown className="size-6" style={{ color: "var(--lilac)" }} />}
                     >
                         <p className={`${rougeScript.className} text-[26px] sm:text-[33px]`} style={{ color: "var(--inkSoft)" }}>
                             Para esta ocasión tan especial, el código de vestimenta es elegante.
@@ -300,7 +301,7 @@ export default function InvitationClient({ familyIdFromUrl }: { familyIdFromUrl?
                                     onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = SOFT_BTN_BG)}
                                 >
                                     <Banknote className="mr-2 size-4" style={{ color: "var(--lilac)" }} />
-                                    Ver cuentas
+                                    Ver cuenta
                                 </Button>
                             )}
                         </div>
@@ -331,7 +332,7 @@ export default function InvitationClient({ familyIdFromUrl }: { familyIdFromUrl?
 
                 {/* 6 — Cierre */}
                 <RevealSection>
-                    <HeroCover src="/shinobu.png" alt="Nos vemos pronto" objectPosition="60% 20%">
+                    <HeroCover src="/shinobu1.png" alt="Nos vemos pronto" objectPosition="45% 10%">
                         <h1
                             className={`text-center text-5xl sm:text-8xl ${greatVibes.className} text-white`}
                             style={{ textShadow: "0 12px 36px rgba(167,139,250,0.55)" }}

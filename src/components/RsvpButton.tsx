@@ -25,14 +25,16 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { CheckCircle2, CalendarHeart, XCircle } from "lucide-react";
 import { motion } from "framer-motion";
 
-const SOFT_BORDER = "#DBEAF5";
-const SOFT_ACCENT = "#8FBFD9";
-const SOFT_TEXT = "#0F172A";
-const BABY_BLUE_TOP = "#F7FBFE";
-const BABY_BLUE_BOTTOM = "#EFF7FD";
+// 👇 Nuevos colores basados en tu Cover
+const SOFT_BORDER = "#e9d5ff"; // Lila muy suave para bordes
+const SOFT_ACCENT = "#8b5cf6"; // Púrpura vibrante principal
+const SOFT_TEXT = "#1a1a1a";   // Texto oscuro elegante
+const LILAC_TOP = "#ffffff";   // Blanco puro arriba
+const LILAC_BOTTOM = "#faf7fc"; // El fondo cálido de tu portada abajo
 
-const CORNER_TOP = "/blueleaves.png";
-const CORNER_BOTTOM = "/blueroses.png";
+// 💡 TIP: Considera cambiar estas imágenes por versiones lila o elementos de mariposas
+const CORNER_TOP = "/butterflies-cover.png"; 
+const CORNER_BOTTOM = "/dust-bg.png";
 
 type Family = { id: string; nombreFamilia: string; nroPersonas: number; invitados?: { adult?: number; kids?: number; total?: number }; };
 
@@ -53,13 +55,14 @@ export default function RsvpButton({
   prefillFamily,
   confirmed,
   onConfirmed,
-  onDeclined, // 👈 NUEVO
+  onDeclined, 
   greetingTemplate = "Estimad@ {{nombre}}",
   note,
   titleClassName,
   textClassName,
   requirePrefill = true,
-  successYesMessage = "¡Qué emoción, nos vemos en la boda! 💙",
+  // 👇 Cambiado de "boda" a "celebración" y emoji a 💜
+  successYesMessage = "¡Qué emoción, nos vemos en la celebración! 💜", 
   successNoMessage = "No hay problema, nos encontraremos en una siguiente ocasión",
 }: {
   triggerClassName?: string;
@@ -68,7 +71,7 @@ export default function RsvpButton({
   prefillFamily?: Family;
   confirmed?: boolean;
   onConfirmed?: () => void;
-  onDeclined?: () => void; // 👈 NUEVO
+  onDeclined?: () => void;
   greetingTemplate?: string;
   note?: string;
   titleClassName?: string;
@@ -89,7 +92,8 @@ export default function RsvpButton({
   const [successData, setSuccessData] = React.useState<
     null | { nombreFamilia: string; nroPersonas: number; asistencia: boolean }
   >(null);
-  const SOFT_BTN_BG = "#EAF3FB";
+  
+  const SOFT_BTN_BG = "#faf7fc"; // Fondo sutil para el botón
   const [alreadyResponded, setAlreadyResponded] = React.useState(false);
   const [checkingStatus, setCheckingStatus] = React.useState(false);
 
@@ -97,10 +101,8 @@ export default function RsvpButton({
   const selected: Family | null =
     families.find((f) => f.id === familyId) || prefillFamily || null;
 
-  // tratado como "ya respondió" (para ocultar trigger)
   const isConfirmed = (confirmed ?? alreadyResponded) === true;
 
-  // Autochequeo de elegibilidad
   React.useEffect(() => {
     if (!hasPrefill) return;
     if (confirmed !== undefined) return;
@@ -123,7 +125,6 @@ export default function RsvpButton({
     return () => { cancelled = true; };
   }, [hasPrefill, confirmed, prefillFamily, prefillFamilyId]);
 
-  // Carga de familias (sin prefill)
   React.useEffect(() => {
     if (!open || loadedOnce || hasPrefill || requirePrefill) return;
     (async () => {
@@ -164,7 +165,6 @@ export default function RsvpButton({
       });
 
       if (res.status === 409) {
-        // Ya habían respondido (desconocemos si fue sí/no) → no llamar callbacks
         setFamilies((prev) => prev.filter((f) => f.id !== selected.id));
         setFamilyId("");
         setAlreadyResponded(true);
@@ -173,7 +173,6 @@ export default function RsvpButton({
       }
       if (!res.ok) throw new Error(await res.text());
 
-      // Éxito
       setFamilies((prev) => prev.filter((f) => f.id !== selected.id));
       setFamilyId("");
       setOpen(false);
@@ -185,7 +184,6 @@ export default function RsvpButton({
 
       setAlreadyResponded(true);
 
-      // 👇 callback correcto según la elección
       if (asistenciaBool) onConfirmed?.();
       else onDeclined?.();
 
@@ -208,7 +206,6 @@ export default function RsvpButton({
 
   return (
     <>
-      {/* Trigger */}
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger asChild>
           <Button
@@ -217,7 +214,7 @@ export default function RsvpButton({
                 style={{
                   backgroundColor: SOFT_BTN_BG,
                   color: SOFT_TEXT,
-                  boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
+                  boxShadow: "0 1px 2px rgba(139, 92, 246, 0.06)",
                   borderColor: SOFT_BORDER
                 }}
             disabled={noneLeft}
@@ -227,25 +224,30 @@ export default function RsvpButton({
           </Button>
         </DialogTrigger>
 
-        {/* Modal */}
         <DialogContent
           className="sm:max-w-lg rounded-[28px] p-0 overflow-hidden"
           style={{
             borderColor: SOFT_BORDER,
-            background: `linear-gradient(180deg, ${BABY_BLUE_TOP}, ${BABY_BLUE_BOTTOM})`,
+            // 👇 Gradiente usando la nueva paleta lila
+            background: `linear-gradient(180deg, ${LILAC_TOP}, ${LILAC_BOTTOM})`,
           }}
         >
-          {/* adornos */}
           <Image
-            src={CORNER_TOP}
-            alt=""
-            width={192}
-            height={192}
-            aria-hidden
-            className="pointer-events-none select-none absolute right-[-10%] top-[-8%]"
-            style={{ transform: "rotate(8deg)", opacity: 0.9, width: "10rem", height: "auto" }}
-            priority={false}
-          />
+                    src={CORNER_TOP}
+                    alt=""
+                    width={420}
+                    height={260}
+                    aria-hidden
+                    className="pointer-events-none select-none absolute right-[-12%] top-[-18%]"
+                    style={{
+                      width: "18rem",
+                      height: "auto",
+                      opacity: 0.18,
+                      transform: "scaleX(-1) rotate(-6deg)",
+                      filter: "saturate(0.8)",
+                    }}
+                    priority={false}
+                  />
           <Image
             src={CORNER_BOTTOM}
             alt=""
@@ -253,53 +255,45 @@ export default function RsvpButton({
             height={192}
             aria-hidden
             className="pointer-events-none select-none absolute left-[-8%] bottom-[-10%]"
-            style={{ transform: "rotate(180deg)", opacity: 0.9, width: "10rem", height: "auto" }}
+            style={{ transform: "rotate(180deg)", opacity: 0.6, width: "10rem", height: "auto", filter: "grayscale(100%) sepia(20%) hue-rotate(220deg) saturate(300%) opacity(0.5)" }}
             priority={false}
           />
 
-          {/* header */}
           <DialogHeader className="pt-6 pb-2 text-center">
             <div
-              className="mx-auto grid place-items-center size-11 rounded-2xl border bg-white"
+              className="mx-auto grid place-items-center size-11 rounded-2xl border bg-white relative z-10"
               style={{ borderColor: SOFT_BORDER }}
             >
               <CalendarHeart className="size-5" style={{ color: SOFT_ACCENT }} />
             </div>
             <DialogTitle
-              className={`mt-3 text-6xl tracking-wide text-center ${titleClassName ?? ""}`}
+              className={`mt-3 text-6xl tracking-wide text-center relative z-10 ${titleClassName ?? ""}`}
               style={{ color: SOFT_TEXT }}
             >
               Para:
               <div className={`mt-1 text-4xl ${titleClassName ?? ""}`} style={{ color: SOFT_TEXT }}>
                 {greeting}
               </div>
-
-              {typeof selected?.invitados?.total === "number" && (
-                <div className={`mt-1 text-xl ${titleClassName ?? ""}`} style={{ color: SOFT_TEXT }}>
-                  Pase válido para {personasLabel(selected.invitados?.total)}
-                </div>
-              )}
             </DialogTitle>
-            <div className="mx-auto mt-2 h-px w-24" style={{ backgroundColor: SOFT_BORDER }} />
+            <div className="mx-auto mt-2 h-px w-24 relative z-10" style={{ backgroundColor: SOFT_BORDER }} />
           </DialogHeader>
 
-          {/* contenido */}
-          <div className="px-5 pb-6">
+          <div className="px-5 pb-6 relative z-10">
             {loadingFamilies ? (
-              <div className="text-sm text-slate-600">Cargando familias…</div>
+              <div className="text-sm text-gray-600">Cargando familias…</div>
             ) : noneLeft && !selected ? (
-              <div className="text-sm text-slate-600">No hay familias pendientes por responder.</div>
+              <div className="text-sm text-gray-600">No hay familias pendientes por responder.</div>
             ) : (
               <form onSubmit={onSubmit} className="grid gap-4">
                 <div className="px-4 py-4 text-center">
                   {note && (
-                    <p className={`mt-2 text-sm text-slate-600 ${textClassName ?? ""}`}>{note}</p>
+                    <p className={`mt-2 text-sm text-gray-600 ${textClassName ?? ""}`}>{note}</p>
                   )}
                 </div>
 
                 {!requirePrefill && !hasPrefill && (
                   <div className="grid gap-2">
-                    <Label className={`text-slate-700 ${textClassName ?? ""}`}>Familia</Label>
+                    <Label className={`text-gray-700 ${textClassName ?? ""}`}>Familia</Label>
                     <Select value={familyId} onValueChange={setFamilyId}>
                       <SelectTrigger className="rounded-xl bg-white" style={{ borderColor: SOFT_BORDER }}>
                         <SelectValue placeholder="Selecciona tu familia" />
@@ -316,7 +310,7 @@ export default function RsvpButton({
                 )}
 
                 <div className="grid gap-2">
-                  <Label className={`text-slate-700 text-2xl ${titleClassName ?? ""}`}>
+                  <Label className={`text-gray-700 text-2xl ${titleClassName ?? ""}`}>
                   {asistiranLabel(selected?.invitados?.total)}</Label>
 
                   <RadioGroup
@@ -326,33 +320,37 @@ export default function RsvpButton({
                   >
                     {(["si", "no"] as const).map((val) => {
                       const selectedPill = attendance === val;
+                      const isYes = val === "si";
+                      // 👇 Colores dinámicos para SÍ y NO
+                      const activeColor = isYes ? SOFT_ACCENT : "#e11d48"; 
+                      
                       return (
                         <label
                           key={val}
                           htmlFor={`asist-${val}`}
                           className="group relative flex cursor-pointer select-none items-center gap-3 rounded-2xl border px-4 py-3 transition"
                           style={{
-                            background: `linear-gradient(180deg, ${BABY_BLUE_TOP}, ${BABY_BLUE_BOTTOM})`,
-                            borderColor: selectedPill ? SOFT_ACCENT : SOFT_BORDER,
-                            boxShadow: selectedPill ? `0 0 0 3px ${SOFT_ACCENT}22` : "none",
+                            background: `linear-gradient(180deg, ${LILAC_TOP}, ${LILAC_BOTTOM})`,
+                            borderColor: selectedPill ? activeColor : SOFT_BORDER,
+                            boxShadow: selectedPill ? `0 0 0 3px ${activeColor}22` : "none",
                           }}
                         >
                           <RadioGroupItem id={`asist-${val}`} value={val} className="sr-only" />
-                          {val === "si" ? (
+                          {isYes ? (
                             <CheckCircle2
                               className="size-5"
-                              style={{ color: selectedPill ? SOFT_ACCENT : "#94a3b8" }}
+                              style={{ color: selectedPill ? activeColor : "#9ca3af" }}
                               aria-hidden
                             />
                           ) : (
                             <XCircle
                               className="size-5"
-                              style={{ color: selectedPill ? SOFT_ACCENT : "#94a3b8" }}
+                              style={{ color: selectedPill ? activeColor : "#9ca3af" }}
                               aria-hidden
                             />
                           )}
                           <span className={`text-sm ${textClassName ?? ""}`}>
-                            {val === "si" ? "Sí" : "No"}
+                            {isYes ? "Sí" : "No"}
                           </span>
                         </label>
                       );
@@ -365,12 +363,12 @@ export default function RsvpButton({
                     <Button
                       type="submit"
                       disabled={!selected || submitting}
-                      className="rounded-2xl px-5 py-2 text-sm font-semibold"
+                      className="rounded-2xl px-5 py-2 text-sm font-semibold transition-opacity hover:opacity-90"
                       style={{
-                        background: `linear-gradient(180deg, ${BABY_BLUE_TOP}, ${BABY_BLUE_BOTTOM})`,
-                        border: `1px solid ${SOFT_BORDER}`,
-                        color: SOFT_TEXT,
-                        boxShadow: "0 6px 18px rgba(15,23,42,0.06)",
+                        background: SOFT_ACCENT, // Botón sólido lila
+                        border: "none",
+                        color: "#ffffff",
+                        boxShadow: "0 6px 18px rgba(139, 92, 246, 0.25)",
                       }}
                     >
                       {submitting ? "Enviando..." : "Enviar confirmación"}
@@ -383,7 +381,6 @@ export default function RsvpButton({
         </DialogContent>
       </Dialog>
 
-      {/* Éxito */}
       <Dialog open={successOpen} onOpenChange={setSuccessOpen}>
         <DialogContent className="sm:max-w-md bg-transparent border-0 shadow-none p-0 [&>button]:hidden [&_[data-slot='dialog-close']]:hidden">
           <motion.div
@@ -392,46 +389,48 @@ export default function RsvpButton({
             transition={{ type: "spring", stiffness: 260, damping: 20 }}
             className="rounded-[24px] p-6 shadow-2xl"
             style={{
-              background: `linear-gradient(180deg, ${BABY_BLUE_TOP}, ${BABY_BLUE_BOTTOM})`,
+              background: `linear-gradient(180deg, ${LILAC_TOP}, ${LILAC_BOTTOM})`,
               border: `1px solid ${SOFT_BORDER}`,
             }}
           >
             <DialogHeader className="items-center">
               <div
                 className="mb-2 inline-flex h-12 w-12 items-center justify-center rounded-full"
-                style={{ backgroundColor: successData?.asistencia ? "#E8F6EE" : "#FDECEC" }}
+                // 👇 Fondos pastel lila y rosa pálido
+                style={{ backgroundColor: successData?.asistencia ? "#f3e8ff" : "#fff1f2" }} 
               >
                 {successData?.asistencia ? (
-                  <CheckCircle2 className="h-7 w-7" style={{ color: "#22C55E" }} />
+                  <CheckCircle2 className="h-7 w-7" style={{ color: SOFT_ACCENT }} />
                 ) : (
-                  <XCircle className="h-7 w-7" style={{ color: "#ef4444" }} />
+                  <XCircle className="h-7 w-7" style={{ color: "#e11d48" }} />
                 )}
               </div>
-              <DialogTitle className="text-center">
+              <DialogTitle className="text-center" style={{ color: SOFT_TEXT }}>
                 {successData?.asistencia ? "¡Confirmación enviada!" : "¡Respuesta registrada!"}
               </DialogTitle>
             </DialogHeader>
 
-            <div className="space-y-1 text-sm text-center text-slate-700">
+            <div className="space-y-1 text-sm text-center text-gray-700 mt-2">
               <p>
-                Registramos la respuesta de <b>{successData?.nombreFamilia}</b> para{" "}
-                <b>{personasLabel(successData?.nroPersonas)}</b>.
+                Registramos la respuesta de <b style={{ color: SOFT_TEXT }}>{successData?.nombreFamilia}</b> para{" "}
+                <b style={{ color: SOFT_TEXT }}>{personasLabel(successData?.nroPersonas)}</b>.
               </p>
               {successData?.asistencia ? (
-                <p>{successYesMessage}</p>
+                <p className="mt-2 text-gray-600">{successYesMessage}</p>
               ) : (
-                <p>{successNoMessage}</p>
+                <p className="mt-2 text-gray-600">{successNoMessage}</p>
               )}
             </div>
 
-            <DialogFooter className="mt-4 justify-center">
+            <DialogFooter className="mt-6 justify-center">
               <DialogClose asChild>
                 <Button
-                  className="rounded-xl"
+                  className="rounded-xl transition-opacity hover:opacity-90"
                   style={{
-                    background: `linear-gradient(180deg, ${BABY_BLUE_TOP}, ${BABY_BLUE_BOTTOM})`,
-                    border: `1px solid ${SOFT_BORDER}`,
-                    color: SOFT_TEXT,
+                    background: SOFT_ACCENT,
+                    border: "none",
+                    color: "#ffffff",
+                    boxShadow: "0 4px 12px rgba(139, 92, 246, 0.2)",
                   }}
                 >
                   Aceptar

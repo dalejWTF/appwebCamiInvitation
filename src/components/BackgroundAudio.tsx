@@ -23,7 +23,7 @@ export default function BackgroundAudio({
   src,
   title = "Música de fondo",
   artist = "Daniel & Nicole",
-  cover = "/assets/cover.jpg",
+  cover = "/assets/shinobu1.jpg",
   initialVolume = 0.6,
   loop = true,
   className,
