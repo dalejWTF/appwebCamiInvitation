@@ -80,73 +80,73 @@ function withVars(vars: CSSVars, base: React.CSSProperties = {}): React.CSSPrope
 }
 
 export default function InvitationClient({ familyIdFromUrl }: { familyIdFromUrl?: string }) {
-  const [prefillFamily, setPrefillFamily] = React.useState<Family | undefined>(undefined);
-  const [confirmed, setConfirmed] = React.useState(false);
-  const [declined, setDeclined] = React.useState(false);
-  const [checking, setChecking] = React.useState(true);
+    const [prefillFamily, setPrefillFamily] = React.useState<Family | undefined>(undefined);
+    const [confirmed, setConfirmed] = React.useState(false);
+    const [declined, setDeclined] = React.useState(false);
+    const [checking, setChecking] = React.useState(true);
 
 
-  // Lee estado desde el backend por familyId
-  React.useEffect(() => {
-    if (!familyIdFromUrl) { setChecking(false); return; }
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await fetch(`/api/guests?familyId=${encodeURIComponent(familyIdFromUrl)}`, { cache: "no-store" });
-        if (!res.ok) throw new Error(`GET /api/guests?familyId failed: ${res.status}`);
-        const data = await res.json();
+    // Lee estado desde el backend por familyId
+    React.useEffect(() => {
+        if (!familyIdFromUrl) { setChecking(false); return; }
+        let cancelled = false;
+        (async () => {
+            try {
+                const res = await fetch(`/api/guests?familyId=${encodeURIComponent(familyIdFromUrl)}`, { cache: "no-store" });
+                if (!res.ok) throw new Error(`GET /api/guests?familyId failed: ${res.status}`);
+                const data = await res.json();
 
-        // Normalización (acepta varios esquemas del backend):
-        const rawStr = (data.status ?? data.rsvp ?? data.response ?? data.answer ?? "")
-          .toString()
-          .trim()
-          .toLowerCase();
-        const yesLike = ["si", "sí", "yes", "true"];
-        const noLike = ["no", "false"];
-        const responded = data.responded === true;
-        const isYes =
-          yesLike.includes(rawStr) ||
-          data.status === "si" ||
-          data.confirmed === true ||
-          (responded && data.attending === true);
+                // Normalización (acepta varios esquemas del backend):
+                const rawStr = (data.status ?? data.rsvp ?? data.response ?? data.answer ?? "")
+                    .toString()
+                    .trim()
+                    .toLowerCase();
+                const yesLike = ["si", "sí", "yes", "true"];
+                const noLike = ["no", "false"];
+                const responded = data.responded === true;
+                const isYes =
+                    yesLike.includes(rawStr) ||
+                    data.status === "si" ||
+                    data.confirmed === true ||
+                    (responded && data.attending === true);
 
-        const isNo =
-          noLike.includes(rawStr) ||
-          data.status === "no" ||
-          data.declined === true ||
-          (responded && data.attending === false);
+                const isNo =
+                    noLike.includes(rawStr) ||
+                    data.status === "no" ||
+                    data.declined === true ||
+                    (responded && data.attending === false);
 
-        if (!cancelled) {
-          setConfirmed(Boolean(isYes));
-          setDeclined(Boolean(isNo) && !isYes);
-        }
-      } catch (e) {
-        console.error(e);
-      } finally {
-        if (!cancelled) setChecking(false);
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [familyIdFromUrl]);
+                if (!cancelled) {
+                    setConfirmed(Boolean(isYes));
+                    setDeclined(Boolean(isNo) && !isYes);
+                }
+            } catch (e) {
+                console.error(e);
+            } finally {
+                if (!cancelled) setChecking(false);
+            }
+        })();
+        return () => { cancelled = true; };
+    }, [familyIdFromUrl]);
 
-  // Prefill de familia
-  React.useEffect(() => {
-    if (!familyIdFromUrl) return;
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await fetch("/api/guests", { cache: "no-store" });
-        if (!res.ok) return;
-        const data = await res.json();
-        const list: Family[] = data.families ?? [];
-        const fam = list.find((f) => f.id === familyIdFromUrl);
-        if (!cancelled) setPrefillFamily(fam);
-      } catch (e) {
-        console.error(e);
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [familyIdFromUrl]);
+    // Prefill de familia
+    React.useEffect(() => {
+        if (!familyIdFromUrl) return;
+        let cancelled = false;
+        (async () => {
+            try {
+                const res = await fetch("/api/guests", { cache: "no-store" });
+                if (!res.ok) return;
+                const data = await res.json();
+                const list: Family[] = data.families ?? [];
+                const fam = list.find((f) => f.id === familyIdFromUrl);
+                if (!cancelled) setPrefillFamily(fam);
+            } catch (e) {
+                console.error(e);
+            }
+        })();
+        return () => { cancelled = true; };
+    }, [familyIdFromUrl]);
     const [open, setOpen] = React.useState(false);
 
     const mainStyle = withVars(
@@ -218,46 +218,58 @@ export default function InvitationClient({ familyIdFromUrl }: { familyIdFromUrl?
 
                 {/* 3 — Información (suave, lila, con el adorno de rosas ya que lo tienen) */}
                 <RevealSection>
-                    <section
-                        className="relative w-full min-h-[85vh] flex flex-col items-center justify-center text-center px-4 overflow-hidden bg-[#faf7fc]"
-                    >
-                        <div className="z-10 pb-9 py-9">
-                            <VenueBlock
-                                title="Ceremonia"
-                                name={CHURCH_NAME}
-                                address="Av. Pio Jaramillo Alvarado, Loja 110150"
-                                time="04:00 PM"
-                                mapUrl={CHURCH_MAPS_URL}
-                            />
+                    <section className="relative w-full min-h-[85vh] flex flex-col items-center justify-center text-center px-4 overflow-hidden bg-[#faf7fc]">
+                            <div className="z-10 pb-9 py-9 space-y-10">
+                                {/* ====== CEREMONIA ====== */}
+                                <div className="relative">
+                                    <Image
+                                        src="/butterfly1.png"
+                                        alt=""
+                                        width={240}
+                                        height={240}
+                                        className="
+                                            pointer-events-none select-none
+                                            absolute z-20
+                                            -top-6 -right-6
+                                            w-[clamp(55px,12vw,110px)] h-auto
+                                            opacity-90
+                                        "
+                                        style={{ filter: "saturate(0.95)" }}
+                                    />
+                                    <VenueBlock
+                                        title="Ceremonia"
+                                        name={CHURCH_NAME}
+                                        address="Av. Pio Jaramillo Alvarado, Loja 110150"
+                                        time="04:00 PM"
+                                        mapUrl={CHURCH_MAPS_URL}
+                                    />
+                                </div>
 
-                            <div className="relative px-6 py-2 [--rose:clamp(90px,34vw,200px)] sm:[--rose:clamp(72px,22vw,180px)]">
-                                <Image
-                                    src="/butterfly1.png"
-                                    alt=""
-                                    width={240}
-                                    height={240}
-                                    className="pointer-events-none select-none absolute z-20"
-                                    style={{
-                                        left: "calc(-0.20 * var(--rose))",
-                                        top: "50%",
-                                        transform: "translateY(-50%)",
-                                        width: "var(--rose)",
-                                        height: "auto",
-                                        opacity: 0.85,
-                                        filter: "saturate(0.9)",
-                                    }}
-                                    priority={false}
-                                />
+                                {/* ====== RECEPCIÓN ====== */}
+                                <div className="relative">
+                                    <Image
+                                        src="/butterfly1.png"
+                                        alt=""
+                                        width={240}
+                                        height={240}
+                                        className="
+                                            pointer-events-none select-none
+                                            absolute z-20
+                                            -top-6 -right-6
+                                            w-[clamp(55px,12vw,110px)] h-auto
+                                            opacity-90
+                                        "
+                                        style={{ filter: "saturate(0.95)" }}
+                                    />
+                                    <VenueBlock
+                                        title="Recepción"
+                                        name={RECEPTION_NAME}
+                                        address="Vía a Cuenca, barrio Carigán, Loja"
+                                        time="06:30 PM"
+                                        mapUrl={RECEPTION_MAPS_URL}
+                                    />
+                                </div>
                             </div>
-
-                            <VenueBlock
-                                title="Recepción"
-                                name={RECEPTION_NAME}
-                                address="Vía a Cuenca, barrio Carigán, Loja"
-                                time="06:30 PM"
-                                mapUrl={RECEPTION_MAPS_URL}
-                            />
-                        </div>
                     </section>
                 </RevealSection>
 
