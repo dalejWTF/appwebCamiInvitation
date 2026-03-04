@@ -39,11 +39,11 @@ const tangerine = Tangerine({ subsets: ["latin"], weight: "400", variable: "--fo
 const lavishlyYours = Lavishly_Yours({ subsets: ["latin"], weight: "400", variable: "--font-lavishlyyours", display: "swap" });
 const rougeScript = Rouge_Script({ subsets: ["latin"], weight: "400", variable: "--font-rougescript", display: "swap" });
 
-const HB_DATE = new Date("2026-03-14T18:30:00");
-const CHURCH_NAME = "Iglesia Santo Domingo";
-const CHURCH_MAPS_URL = "https://maps.app.goo.gl/12A17Y3gianjggvA9";
-const RECEPTION_NAME = "Lugar Fiesta";
-const RECEPTION_MAPS_URL = "https://maps.app.goo.gl/kdwiUihm8pJUfiQv8";
+const HB_DATE = new Date("2026-03-14T15:00:00");
+const CHURCH_NAME = "Iglesia San Sebastián";
+const CHURCH_MAPS_URL = "https://maps.app.goo.gl/17vsUHS1KF9sGEsF9";
+const RECEPTION_NAME = "";
+const RECEPTION_MAPS_URL = "https://maps.app.goo.gl/kf2hNRTEoQJUwNkX6";
 
 const accounts = [
     { bank: "Cta Ahorros Banco de Loja", holder: "VILLAMAGUA TORRES, CAMILA ELIZABETH", account: "2903295785", dni: "1150174132" },
@@ -239,8 +239,8 @@ export default function InvitationClient({ familyIdFromUrl }: { familyIdFromUrl?
                                     <VenueBlock
                                         title="Ceremonia"
                                         name={CHURCH_NAME}
-                                        address="Av. Pio Jaramillo Alvarado, Loja 110150"
-                                        time="04:00 PM"
+                                        address="Simón Bolivar y Lourdes, Loja"
+                                        time="03:00 PM"
                                         mapUrl={CHURCH_MAPS_URL}
                                     />
                                 </div>
@@ -264,8 +264,8 @@ export default function InvitationClient({ familyIdFromUrl }: { familyIdFromUrl?
                                     <VenueBlock
                                         title="Recepción"
                                         name={RECEPTION_NAME}
-                                        address="Vía a Cuenca, barrio Carigán, Loja"
-                                        time="06:30 PM"
+                                        address="Calle Monte Sinaí, La Laguna, Loja"
+                                        time="7:00 PM"
                                         mapUrl={RECEPTION_MAPS_URL}
                                     />
                                 </div>
