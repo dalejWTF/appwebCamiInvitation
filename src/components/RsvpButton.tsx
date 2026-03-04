@@ -1,0 +1,445 @@
+// components/RsvpButton.tsx
+"use client";
+
+import * as React from "react";
+import Image from "next/image";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogTrigger,
+  DialogClose,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { CheckCircle2, CalendarHeart, XCircle } from "lucide-react";
+import { motion } from "framer-motion";
+
+// 👇 Nuevos colores basados en tu Cover
+const SOFT_BORDER = "#e9d5ff"; // Lila muy suave para bordes
+const SOFT_ACCENT = "#8b5cf6"; // Púrpura vibrante principal
+const SOFT_TEXT = "#1a1a1a";   // Texto oscuro elegante
+const LILAC_TOP = "#ffffff";   // Blanco puro arriba
+const LILAC_BOTTOM = "#faf7fc"; // El fondo cálido de tu portada abajo
+
+// 💡 TIP: Considera cambiar estas imágenes por versiones lila o elementos de mariposas
+const CORNER_TOP = "/butterflies-cover.png"; 
+const CORNER_BOTTOM = "/dust-bg.png";
+
+type Family = { id: string; nombreFamilia: string; nroPersonas: number; invitados?: { adult?: number; kids?: number; total?: number }; };
+
+function personasLabel(n?: number) {
+  if (typeof n !== "number") return "";
+  return n === 1 ? "1 persona" : `${n} personas`;
+}
+
+function asistiranLabel(n?: number) {
+  if (typeof n !== "number") return "";
+  return n === 1 ? "¿Asistirás?" : `¿Asistirán?`;
+}
+
+export default function RsvpButton({
+  triggerClassName = "",
+  triggerLabel = "Confirmar",
+  prefillFamilyId,
+  prefillFamily,
+  confirmed,
+  onConfirmed,
+  onDeclined, 
+  greetingTemplate = "Estimad@ {{nombre}}",
+  note,
+  titleClassName,
+  textClassName,
+  requirePrefill = true,
+  // 👇 Cambiado de "boda" a "celebración" y emoji a 💜
+  successYesMessage = "¡Qué emoción, nos vemos en la celebración! 💜", 
+  successNoMessage = "No hay problema, nos encontraremos en una siguiente ocasión",
+}: {
+  triggerClassName?: string;
+  triggerLabel?: string;
+  prefillFamilyId?: string;
+  prefillFamily?: Family;
+  confirmed?: boolean;
+  onConfirmed?: () => void;
+  onDeclined?: () => void;
+  greetingTemplate?: string;
+  note?: string;
+  titleClassName?: string;
+  textClassName?: string;
+  requirePrefill?: boolean;
+  successYesMessage?: string;
+  successNoMessage?: string;
+}) {
+  const [open, setOpen] = React.useState(false);
+  const [families, setFamilies] = React.useState<Family[]>([]);
+  const [familyId, setFamilyId] = React.useState(prefillFamily?.id ?? "");
+  const [attendance, setAttendance] = React.useState<"si" | "no">("si");
+  const [loadingFamilies, setLoadingFamilies] = React.useState(false);
+  const [submitting, setSubmitting] = React.useState(false);
+  const [loadedOnce, setLoadedOnce] = React.useState(false);
+
+  const [successOpen, setSuccessOpen] = React.useState(false);
+  const [successData, setSuccessData] = React.useState<
+    null | { nombreFamilia: string; nroPersonas: number; asistencia: boolean }
+  >(null);
+  
+  const SOFT_BTN_BG = "#faf7fc"; // Fondo sutil para el botón
+  const [alreadyResponded, setAlreadyResponded] = React.useState(false);
+  const [checkingStatus, setCheckingStatus] = React.useState(false);
+
+  const hasPrefill = Boolean(prefillFamily || prefillFamilyId);
+  const selected: Family | null =
+    families.find((f) => f.id === familyId) || prefillFamily || null;
+
+  const isConfirmed = (confirmed ?? alreadyResponded) === true;
+
+  React.useEffect(() => {
+    if (!hasPrefill) return;
+    if (confirmed !== undefined) return;
+    const id = prefillFamily?.id ?? prefillFamilyId!;
+    let cancelled = false;
+
+    (async () => {
+      try {
+        setCheckingStatus(true);
+        const res = await fetch("/api/rsvp/eligible", { cache: "no-store" });
+        const data = await res.json();
+        const list: Family[] = data.families ?? [];
+        const stillEligible = list.some((f) => f.id === id);
+        if (!cancelled) setAlreadyResponded(!stillEligible);
+      } finally {
+        if (!cancelled) setCheckingStatus(false);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [hasPrefill, confirmed, prefillFamily, prefillFamilyId]);
+
+  React.useEffect(() => {
+    if (!open || loadedOnce || hasPrefill || requirePrefill) return;
+    (async () => {
+      try {
+        setLoadingFamilies(true);
+        const res = await fetch("/api/rsvp/eligible", { cache: "no-store" });
+        const data = await res.json();
+        const list: Family[] = data.families ?? [];
+        setFamilies(list);
+      } finally {
+        setLoadingFamilies(false);
+        setLoadedOnce(true);
+      }
+    })();
+  }, [open, loadedOnce, hasPrefill, requirePrefill]);
+
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!selected || isConfirmed) return;
+    setSubmitting(true);
+    try {
+      const asistenciaBool = attendance === "si";
+      const res = await fetch("/api/rsvp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          familyId: selected.id,
+          nombreFamilia: selected.nombreFamilia,
+          nroPersonas: selected.nroPersonas,
+          asistencia: asistenciaBool,
+          adultos: Number.isFinite(selected?.invitados?.adult as number)
+            ? selected!.invitados!.adult
+            : undefined,
+          ninos: Number.isFinite(selected?.invitados?.kids as number)
+            ? selected!.invitados!.kids
+            : undefined,
+        }),
+      });
+
+      if (res.status === 409) {
+        setFamilies((prev) => prev.filter((f) => f.id !== selected.id));
+        setFamilyId("");
+        setAlreadyResponded(true);
+        setOpen(false);
+        return;
+      }
+      if (!res.ok) throw new Error(await res.text());
+
+      setFamilies((prev) => prev.filter((f) => f.id !== selected.id));
+      setFamilyId("");
+      setOpen(false);
+      setSuccessData({
+        nombreFamilia: selected.nombreFamilia,
+        nroPersonas: selected.nroPersonas,
+        asistencia: asistenciaBool,
+      });
+
+      setAlreadyResponded(true);
+
+      if (asistenciaBool) onConfirmed?.();
+      else onDeclined?.();
+
+      setTimeout(() => setSuccessOpen(true), 0);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  const noneLeft = loadedOnce && !loadingFamilies && families.length === 0;
+  const shouldHide =
+    (requirePrefill && !hasPrefill) ||
+    (hasPrefill && (isConfirmed || checkingStatus));
+  if (shouldHide) return null;
+
+  const displayName = selected?.nombreFamilia ?? "__________";
+  const greeting = greetingTemplate.replace("{{nombre}}", displayName);
+
+  return (
+    <>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogTrigger asChild>
+          <Button
+            variant="outline"
+            className="rounded-xl px-5 py-2 w-auto text-[15px] sm:text-[15px]"
+                style={{
+                  backgroundColor: SOFT_BTN_BG,
+                  color: SOFT_TEXT,
+                  boxShadow: "0 1px 2px rgba(139, 92, 246, 0.06)",
+                  borderColor: SOFT_BORDER
+                }}
+            disabled={noneLeft}
+            title={noneLeft ? "Ya no hay familias pendientes" : ""}
+          >
+            {noneLeft ? "Sin pendientes" : triggerLabel}
+          </Button>
+        </DialogTrigger>
+
+        <DialogContent
+          className="sm:max-w-lg rounded-[28px] p-0 overflow-hidden"
+          style={{
+            borderColor: SOFT_BORDER,
+            // 👇 Gradiente usando la nueva paleta lila
+            background: `linear-gradient(180deg, ${LILAC_TOP}, ${LILAC_BOTTOM})`,
+          }}
+        >
+          <Image
+                    src={CORNER_TOP}
+                    alt=""
+                    width={420}
+                    height={260}
+                    aria-hidden
+                    className="pointer-events-none select-none absolute right-[-12%] top-[-18%]"
+                    style={{
+                      width: "18rem",
+                      height: "auto",
+                      opacity: 0.18,
+                      transform: "scaleX(-1) rotate(-6deg)",
+                      filter: "saturate(0.8)",
+                    }}
+                    priority={false}
+                  />
+          <Image
+            src={CORNER_BOTTOM}
+            alt=""
+            width={192}
+            height={192}
+            aria-hidden
+            className="pointer-events-none select-none absolute left-[-8%] bottom-[-10%]"
+            style={{ transform: "rotate(180deg)", opacity: 0.6, width: "10rem", height: "auto", filter: "grayscale(100%) sepia(20%) hue-rotate(220deg) saturate(300%) opacity(0.5)" }}
+            priority={false}
+          />
+
+          <DialogHeader className="pt-6 pb-2 text-center">
+            <div
+              className="mx-auto grid place-items-center size-11 rounded-2xl border bg-white relative z-10"
+              style={{ borderColor: SOFT_BORDER }}
+            >
+              <CalendarHeart className="size-5" style={{ color: SOFT_ACCENT }} />
+            </div>
+            <DialogTitle
+              className={`mt-3 text-6xl tracking-wide text-center relative z-10 ${titleClassName ?? ""}`}
+              style={{ color: SOFT_TEXT }}
+            >
+              Para:
+              <div className={`mt-1 text-4xl ${titleClassName ?? ""}`} style={{ color: SOFT_TEXT }}>
+                {greeting}
+              </div>
+            </DialogTitle>
+            <div className="mx-auto mt-2 h-px w-24 relative z-10" style={{ backgroundColor: SOFT_BORDER }} />
+          </DialogHeader>
+
+          <div className="px-5 pb-6 relative z-10">
+            {loadingFamilies ? (
+              <div className="text-sm text-gray-600">Cargando familias…</div>
+            ) : noneLeft && !selected ? (
+              <div className="text-sm text-gray-600">No hay familias pendientes por responder.</div>
+            ) : (
+              <form onSubmit={onSubmit} className="grid gap-4">
+                <div className="px-4 py-4 text-center">
+                  {note && (
+                    <p className={`mt-2 text-sm text-gray-600 ${textClassName ?? ""}`}>{note}</p>
+                  )}
+                </div>
+
+                {!requirePrefill && !hasPrefill && (
+                  <div className="grid gap-2">
+                    <Label className={`text-gray-700 ${textClassName ?? ""}`}>Familia</Label>
+                    <Select value={familyId} onValueChange={setFamilyId}>
+                      <SelectTrigger className="rounded-xl bg-white" style={{ borderColor: SOFT_BORDER }}>
+                        <SelectValue placeholder="Selecciona tu familia" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {families.map((f) => (
+                          <SelectItem key={f.id} value={f.id}>
+                            {f.nombreFamilia}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                <div className="grid gap-2">
+                  <Label className={`text-gray-700 text-2xl ${titleClassName ?? ""}`}>
+                  {asistiranLabel(selected?.invitados?.total)}</Label>
+
+                  <RadioGroup
+                    value={attendance}
+                    onValueChange={(v: "si" | "no") => setAttendance(v)}
+                    className="grid grid-cols-2 gap-3"
+                  >
+                    {(["si", "no"] as const).map((val) => {
+                      const selectedPill = attendance === val;
+                      const isYes = val === "si";
+                      // 👇 Colores dinámicos para SÍ y NO
+                      const activeColor = isYes ? SOFT_ACCENT : "#e11d48"; 
+                      
+                      return (
+                        <label
+                          key={val}
+                          htmlFor={`asist-${val}`}
+                          className="group relative flex cursor-pointer select-none items-center gap-3 rounded-2xl border px-4 py-3 transition"
+                          style={{
+                            background: `linear-gradient(180deg, ${LILAC_TOP}, ${LILAC_BOTTOM})`,
+                            borderColor: selectedPill ? activeColor : SOFT_BORDER,
+                            boxShadow: selectedPill ? `0 0 0 3px ${activeColor}22` : "none",
+                          }}
+                        >
+                          <RadioGroupItem id={`asist-${val}`} value={val} className="sr-only" />
+                          {isYes ? (
+                            <CheckCircle2
+                              className="size-5"
+                              style={{ color: selectedPill ? activeColor : "#9ca3af" }}
+                              aria-hidden
+                            />
+                          ) : (
+                            <XCircle
+                              className="size-5"
+                              style={{ color: selectedPill ? activeColor : "#9ca3af" }}
+                              aria-hidden
+                            />
+                          )}
+                          <span className={`text-sm ${textClassName ?? ""}`}>
+                            {isYes ? "Sí" : "No"}
+                          </span>
+                        </label>
+                      );
+                    })}
+                  </RadioGroup>
+                </div>
+
+                <DialogFooter className="pt-1">
+                  <div className="w-full flex justify-center">
+                    <Button
+                      type="submit"
+                      disabled={!selected || submitting}
+                      className="rounded-2xl px-5 py-2 text-sm font-semibold transition-opacity hover:opacity-90"
+                      style={{
+                        background: SOFT_ACCENT, // Botón sólido lila
+                        border: "none",
+                        color: "#ffffff",
+                        boxShadow: "0 6px 18px rgba(139, 92, 246, 0.25)",
+                      }}
+                    >
+                      {submitting ? "Enviando..." : "Enviar confirmación"}
+                    </Button>
+                  </div>
+                </DialogFooter>
+              </form>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={successOpen} onOpenChange={setSuccessOpen}>
+        <DialogContent className="sm:max-w-md bg-transparent border-0 shadow-none p-0 [&>button]:hidden [&_[data-slot='dialog-close']]:hidden">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.92, y: 8 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ type: "spring", stiffness: 260, damping: 20 }}
+            className="rounded-[24px] p-6 shadow-2xl"
+            style={{
+              background: `linear-gradient(180deg, ${LILAC_TOP}, ${LILAC_BOTTOM})`,
+              border: `1px solid ${SOFT_BORDER}`,
+            }}
+          >
+            <DialogHeader className="items-center">
+              <div
+                className="mb-2 inline-flex h-12 w-12 items-center justify-center rounded-full"
+                // 👇 Fondos pastel lila y rosa pálido
+                style={{ backgroundColor: successData?.asistencia ? "#f3e8ff" : "#fff1f2" }} 
+              >
+                {successData?.asistencia ? (
+                  <CheckCircle2 className="h-7 w-7" style={{ color: SOFT_ACCENT }} />
+                ) : (
+                  <XCircle className="h-7 w-7" style={{ color: "#e11d48" }} />
+                )}
+              </div>
+              <DialogTitle className="text-center" style={{ color: SOFT_TEXT }}>
+                {successData?.asistencia ? "¡Confirmación enviada!" : "¡Respuesta registrada!"}
+              </DialogTitle>
+            </DialogHeader>
+
+            <div className="space-y-1 text-sm text-center text-gray-700 mt-2">
+              <p>
+                Registramos la respuesta de <b style={{ color: SOFT_TEXT }}>{successData?.nombreFamilia}</b> para{" "}
+                <b style={{ color: SOFT_TEXT }}>{personasLabel(successData?.nroPersonas)}</b>.
+              </p>
+              {successData?.asistencia ? (
+                <p className="mt-2 text-gray-600">{successYesMessage}</p>
+              ) : (
+                <p className="mt-2 text-gray-600">{successNoMessage}</p>
+              )}
+            </div>
+
+            <DialogFooter className="mt-6 justify-center">
+              <DialogClose asChild>
+                <Button
+                  className="rounded-xl transition-opacity hover:opacity-90"
+                  style={{
+                    background: SOFT_ACCENT,
+                    border: "none",
+                    color: "#ffffff",
+                    boxShadow: "0 4px 12px rgba(139, 92, 246, 0.2)",
+                  }}
+                >
+                  Aceptar
+                </Button>
+              </DialogClose>
+            </DialogFooter>
+          </motion.div>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
