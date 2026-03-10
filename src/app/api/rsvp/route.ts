@@ -122,8 +122,8 @@ export async function POST(req: Request) {
 
     // Header con columnas adultos y niños
     const header =
-      `| family_id | creation_date | nombre_familia | adultos | niños | total | asistencia |\n` +
-      `|---|---|---|---|---|---|---|\n`;
+      `| family_id | creation_date | nombre_familia | asistencia |\n` +
+      `|---|---|---|---|\n`;
 
     // Timestamp en hora local (no uses toISOString, que es UTC)
     const ts = nowString();
@@ -133,7 +133,7 @@ export async function POST(req: Request) {
     const ninosCell = Number.isFinite(ninos as number) ? String(ninos) : "";
 
     const newRow =
-      `| ${familyId} | ${ts} | ${nombreFamilia} | ${adultosCell} | ${ninosCell} | ${nroPersonas} | ${asistencia ? "Sí" : "No"} |\n`;
+      `| ${familyId} | ${ts} | ${nombreFamilia} | ${asistencia ? "Sí" : "No"} |\n`;
 
     // Mensaje de commit solicitado
     const commitMessage = `Invitado ${nombreFamilia} - Respuesta enviada: ${nowString()}`;

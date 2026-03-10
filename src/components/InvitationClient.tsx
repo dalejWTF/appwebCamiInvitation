@@ -43,7 +43,7 @@ const HB_DATE = new Date("2026-03-14T15:00:00");
 const CHURCH_NAME = "Iglesia San Sebastián";
 const CHURCH_MAPS_URL = "https://maps.app.goo.gl/17vsUHS1KF9sGEsF9";
 const RECEPTION_NAME = "";
-const RECEPTION_MAPS_URL = "https://maps.app.goo.gl/kf2hNRTEoQJUwNkX6";
+const RECEPTION_MAPS_URL = "https://maps.app.goo.gl/xw69qhKrRaBQbjhZ7";
 
 const accounts = [
     { bank: "Cta Ahorros Banco de Loja", holder: "VILLAMAGUA TORRES, CAMILA ELIZABETH", account: "2903295785", dni: "1150174132" },
@@ -264,7 +264,7 @@ export default function InvitationClient({ familyIdFromUrl }: { familyIdFromUrl?
                                     <VenueBlock
                                         title="Recepción"
                                         name={RECEPTION_NAME}
-                                        address="Calle Monte Sinaí, La Laguna, Loja"
+                                        address="Calle Monte Sinaí y Juan el Bautista, sector Laguna de la Daniel Álvarez, Loja"
                                         time="7:00 PM"
                                         mapUrl={RECEPTION_MAPS_URL}
                                     />
