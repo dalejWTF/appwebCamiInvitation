@@ -3,11 +3,6 @@ import { NextResponse } from "next/server";
 import { loadGuests } from "@/lib/loadGuests";
 
 export const runtime = "nodejs";
-// AGREGA ESTO PARA DEPURAR:
-console.log("=== LEYENDO ENV ===");
-console.log("Token existe?:", !!process.env.GITHUB_TOKEN);
-console.log("Dueño del repo:", process.env.GITHUB_OWNER);
-console.log("===================");
 
 const OWNER = process.env.GITHUB_OWNER!;
 const REPO = process.env.GITHUB_REPO!;
